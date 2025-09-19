@@ -1,0 +1,122 @@
+[
+  {
+    "Name": "BYD",
+    "Model": "Dolphin",
+    "Images": {
+      "back": "/car_images/dolphin/back-view.jpg",
+      "interior": "/car_images/dolphin/interior.jpg",
+      "quarter": "/car_images/dolphin/quarter-view.jpeg",
+      "side": "/car_images/dolphin/side-view.jpg"
+    },
+    "Price": 99990,
+    "Location": "São Paulo"
+  },
+  {
+    "Name": "Toyota",
+    "Model": "Corolla",
+    "Images": {
+      "back": "/car_images/corolla/back-view.jpeg",
+      "interior": "/car_images/corolla/interior.jpeg",
+      "quarter": "/car_images/corolla/quarter-view.jpeg",
+      "side": "/car_images/corolla/side-view.jpeg"
+    },
+    "Price": 112000,
+    "Location": "São Paulo"
+  },
+  {
+    "Name": "Volkswagen",
+    "Model": "T-Cross",
+    "Images": {
+      "back": "/car_images/t-cross/back-view.jpeg",
+      "interior": "/car_images/t-cross/interior.jpeg",
+      "quarter": "/car_images/t-cross/quarter-view.jpeg",
+      "side": "/car_images/t-cross/side-view.jpeg"
+    },
+    "Price": 118500,
+    "Location": "Campinas"
+  },
+  {
+    "Name": "Honda",
+    "Model": "Civic",
+    "Images": {
+      "back": "/car_images/civic/back-view.jpg",
+      "interior": "/car_images/civic/interior.jpg",
+      "quarter": "/car_images/civic/quarter-view.jpg",
+      "side": "/car_images/civic/side-view.jpg"
+    },
+    "Price": 105000,
+    "Location": "Rio de Janeiro"
+  },
+  {
+    "Name": "Chevrolet",
+    "Model": "Onix",
+    "Images": {
+      "back": "/car_images/onix/back-view.jpg",
+      "interior": "/car_images/onix/interior.jpg",
+      "quarter": "/car_images/onix/quarter-view.jpg",
+      "side": "/car_images/onix/side-view.jpg"
+    },
+    "Price": 85000,
+    "Location": "Belo Horizonte"
+  },
+  {
+    "Name": "Hyundai",
+    "Model": "HB20",
+    "Images": {
+      "back": "/car_images/hb20/back-view.jpg",
+      "interior": "/car_images/hb20/interior.jpg",
+      "quarter": "/car_images/hb20/quarter-view.jpg",
+      "side": "/car_images/hb20/side-view.jpg"
+    },
+    "Price": 79000,
+    "Location": "São Paulo"
+  },
+  {
+    "Name": "Renault",
+    "Model": "Kwid",
+    "Images": {
+      "back": "/car_images/kwid/back-view.jpg",
+      "interior": "/car_images/kwid/interior.jpg",
+      "quarter": "/car_images/kwid/quarter-view.jpg",
+      "side": "/car_images/kwid/side-view.jpg"
+    },
+    "Price": 68990,
+    "Location": "Curitiba"
+  },
+  {
+    "Name": "Fiat",
+    "Model": "Pulse",
+    "Images": {
+      "back": "/car_images/pulse/back-view.jpg",
+      "interior": "/car_images/pulse/interior.jpg",
+      "quarter": "/car_images/pulse/quarter-view.jpg",
+      "side": "/car_images/pulse/side-view.jpg"
+    },
+    "Price": 96000,
+    "Location": "São Paulo"
+  },
+  {
+    "Name": "Jeep",
+    "Model": "Renegade",
+    "Images": {
+      "back": "/car_images/renegade/back-view.jpg",
+      "interior": "/car_images/renegade/interior.jpg",
+      "quarter": "/car_images/renegade/quarter-view.jpg",
+      "side": "/car_images/renegade/side-view.jpg"
+    },
+    "Price": 122000,
+    "Location": "Porto Alegre"
+  },
+  {
+    "Name": "Peugeot",
+    "Model": "208",
+    "Images": {
+      "back": "/car_images/208/back-view.jpg",
+      "interior": "/car_images/208/interior.jpg",
+      "quarter": "/car_images/208/quarter-view.jpg",
+      "side": "/car_images/208/side-view.jpg"
+    },
+    "Price": 87500,
+    "Location": "São Paulo"
+  }
+]
