@@ -2,6 +2,12 @@
 
 Uma aplicação web moderna que utiliza **Inteligência Artificial conversacional** para ajudar usuários a encontrar o carro perfeito. Desenvolvida com Next.js 15, TypeScript e integração com OpenAI GPT-4.
 
+## 🌐 Disponível e Funcionando
+
+**🚀 [Acesse a aplicação em produção](https://tech-challenge-klubi.onrender.com/)**
+
+A aplicação está **100% funcional** e disponível online. Teste todas as funcionalidades de busca conversacional com IA, navegue pela galeria de carros e experimente a interface moderna e responsiva.
+
 ## 🎯 Visão Geral
 
 O CarFinder AI é uma demonstração de como a IA conversacional pode revolucionar a experiência de busca de produtos. A aplicação permite que usuários descrevam suas necessidades em linguagem natural e recebam recomendações inteligentes e personalizadas.
