@@ -140,7 +140,7 @@ export default function LandingPage() {
                         <div className="max-w-xs">
                           <div className="gradient-primary rounded-2xl rounded-br-md p-4 shadow-lg">
                             <p className="text-white font-medium">
-                              "Quero um SUV elétrico familiar até R$ 120k em São Paulo"
+                              Quero um SUV elétrico familiar até R$ 120k em São Paulo
                             </p>
                           </div>
                         </div>
@@ -151,7 +151,7 @@ export default function LandingPage() {
                         <div className="max-w-sm">
                           <div className="glass-subtle rounded-2xl rounded-bl-md p-4 shadow-lg">
                             <p className="text-gray-800 font-medium mb-3">
-                              "Perfeito! Encontrei 3 opções que combinam com você:"
+                              Perfeito! Encontrei 3 opções que combinam com você:
                             </p>
                             
                             {/* Mini Car Cards */}
@@ -263,7 +263,7 @@ export default function LandingPage() {
                     Interface Conversacional
                   </h3>
                   <p className="text-gray-600 mb-6">
-                    "Quero um SUV elétrico para família em São Paulo, até R$ 120.000"
+                    Quero um SUV elétrico para família em São Paulo, até R$ 120.000
                   </p>
                   <div className="bg-gray-100 rounded-lg p-4 text-left">
                     <p className="text-sm text-gray-600 mb-2">🤖 CarFinder AI:</p>
@@ -347,18 +347,18 @@ export default function LandingPage() {
             <div className="animate-slide-up">
               <Card variant="default" className="p-6 bg-gray-50 border border-gray-200">
                 <div className="text-sm">
-                  <div className="text-gray-500 mb-2">// Exemplo de integração</div>
+                  <div className="text-gray-500 mb-2">Exemplo de integração</div>
                   <div className="font-mono text-gray-800">
-                    <div className="text-blue-600">import</div> {'{CarFinderAI}'} <div className="text-blue-600">from</div> <div className="text-green-600">'@carfinder/sdk'</div>
+                    <div className="text-blue-600">import</div> {'{CarFinderAI}'} <div className="text-blue-600">from</div> <div className="text-green-600">&apos;@carfinder/sdk&apos;</div>
                     <br /><br />
                     <div className="text-blue-600">const</div> <div className="text-purple-600">ai</div> = <div className="text-blue-600">new</div> <div className="text-yellow-600">CarFinderAI</div>({'{'}
                     <br />
-                    &nbsp;&nbsp;apiKey: <div className="text-green-600">'your-api-key'</div>
+                    &nbsp;&nbsp;apiKey: <div className="text-green-600">&apos;your-api-key&apos;</div>
                     <br />
                     {'}'})
                     <br /><br />
                     <div className="text-blue-600">const</div> <div className="text-purple-600">results</div> = <div className="text-blue-600">await</div> <div className="text-purple-600">ai</div>.<div className="text-yellow-600">search</div>(<br />
-                    &nbsp;&nbsp;<div className="text-green-600">'SUV elétrico até R$ 100k'</div>
+                    &nbsp;&nbsp;<div className="text-green-600">&apos;SUV elétrico até R$ 100k&apos;</div>
                     <br />
                     )
                   </div>

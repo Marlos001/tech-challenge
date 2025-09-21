@@ -4,6 +4,77 @@ import { HumanMessage, SystemMessage, AIMessage, ToolMessage } from '@langchain/
 import carsData from '@/data/cars.json';
 import type { Car } from '@/types/car';
 
+// Typed tool input contracts
+interface SearchCarsInput {
+  name?: string;
+  model?: string;
+  location?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  powertrain?: 'electric' | 'hybrid' | 'flex' | 'gasoline' | 'diesel';
+  body?: 'hatch' | 'sedan' | 'suv';
+  minSeats?: number;
+  tags?: string[];
+  limit?: number;
+}
+
+interface RecommendCarsInput {
+  budget?: number;
+  location?: string;
+  usage?: 'city' | 'highway' | 'mixed';
+  familySize?: number;
+  preferSUV?: boolean;
+  preferEV?: boolean;
+  wantsTech?: boolean;
+  needsCargo?: boolean;
+  limit?: number;
+}
+
+// Type guards to validate tool args from LLM
+const isRecord = (val: unknown): val is Record<string, unknown> =>
+  typeof val === 'object' && val !== null && !Array.isArray(val);
+
+const isStringArray = (val: unknown): val is string[] =>
+  Array.isArray(val) && val.every((v) => typeof v === 'string');
+
+function isSearchCarsInput(val: unknown): val is SearchCarsInput {
+  if (!isRecord(val)) return false;
+  if (val.tags !== undefined && !isStringArray(val.tags)) return false;
+  return true;
+}
+
+function isRecommendCarsInput(val: unknown): val is RecommendCarsInput {
+  return isRecord(val);
+}
+
+// Minimal shape for tool calls returned by the LLM message
+type ToolCallRaw = {
+  id?: string;
+  tool_call_id?: string;
+  name?: string;
+  function?: { name?: string; arguments?: string };
+  args?: unknown;
+};
+
+const extractToolCalls = (message: AIMessage): ToolCallRaw[] => {
+  const maybeDirect = (message as unknown as { tool_calls?: unknown }).tool_calls;
+  const maybeAdditional = (message as unknown as { additional_kwargs?: { tool_calls?: unknown } }).additional_kwargs?.tool_calls;
+  const raw = (maybeDirect ?? maybeAdditional) as unknown;
+  return Array.isArray(raw) ? (raw as unknown[]).map((r) => r as ToolCallRaw) : [];
+};
+
+const extractResultsFromJson = (jsonStr: string): Car[] => {
+  try {
+    const parsed: unknown = JSON.parse(jsonStr);
+    if (isRecord(parsed) && Array.isArray((parsed as { results?: unknown }).results)) {
+      return (parsed as { results: Car[] }).results;
+    }
+  } catch {
+    // ignore
+  }
+  return [];
+};
+
 export async function POST(request: NextRequest) {
   try {
     const { message, history } = await request.json();
@@ -118,7 +189,7 @@ export async function POST(request: NextRequest) {
       return false;
     };
 
-    const searchCarsFunc = async (input: any) => {
+    const searchCarsFunc = async (input: SearchCarsInput) => {
       const name = normalize(input?.name);
       const model = normalize(input?.model);
       const location = cleanLocationPhrase(input?.location);
@@ -252,7 +323,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Recommendation with scoring based on profile and constraints
-    const recommendCarsFunc = async (input: any) => {
+    const recommendCarsFunc = async (input: RecommendCarsInput) => {
       const budget: number | undefined = typeof input?.budget === 'number' ? input.budget : undefined;
       const location = cleanLocationPhrase(input?.location);
       const requestedUF = getRequestedUF(location);
@@ -676,7 +747,7 @@ export async function POST(request: NextRequest) {
       console.warn('[chat] OPENAI_API_KEY ausente. Usando busca local básica.');
       // Heurística simples: tenta localizar por localização, marca e modelo usando o dataset
 
-      const detectPowertrain = (): string | undefined => {
+      const detectPowertrain = (): SearchCarsInput['powertrain'] => {
         if (/(eletric|el[eé]tric|ev|el[eé]trico)/.test(normMsg)) return 'electric';
         if (/(h[ií]brido|hibrid)/.test(normMsg)) return 'hybrid';
         if (/(diesel)/.test(normMsg)) return 'diesel';
@@ -684,30 +755,33 @@ export async function POST(request: NextRequest) {
         if (/(flex)/.test(normMsg)) return 'flex';
         return undefined;
       };
-      const detectBody = (): string | undefined => {
+      const detectBody = (): SearchCarsInput['body'] => {
         if (/\bsuv\b/.test(normMsg)) return 'suv';
         if (/(sed[aã]n|sedan)/.test(normMsg)) return 'sedan';
         if (/(hatch|hatchback)/.test(normMsg)) return 'hatch';
         return undefined;
       };
 
-      const detected = {
+      const detected: SearchCarsInput = {
         location: uniqueLocations.find((loc) => loc && normMsg.includes(loc)),
         name: uniqueBrands.find((b) => b && normMsg.includes(b)),
         model: uniqueModels.find((m) => m && normMsg.includes(m)),
         powertrain: detectPowertrain(),
         body: detectBody(),
         maxPrice: inferredMax,
-      } as any;
+      };
 
       const result = await searchCarsFunc(detected);
-      const parsed = JSON.parse(result);
+      const parsed: unknown = JSON.parse(result);
+      const parsedResults = (isRecord(parsed) && Array.isArray((parsed as { results?: unknown }).results))
+        ? (parsed as { results: Car[] }).results
+        : [];
       return NextResponse.json({
         message:
-          parsed.count > 0
+          (isRecord(parsed) && typeof (parsed as { count?: unknown }).count === 'number' && (parsed as { count: number }).count > 0)
             ? 'Encontrei estas opções para você.'
             : 'Não encontrei resultados exatos. Posso sugerir alternativas próximas?',
-        cars: parsed.results ?? [],
+        cars: parsedResults,
         success: true,
       });
     }
@@ -806,35 +880,38 @@ export async function POST(request: NextRequest) {
 
     for (let i = 0; i < 3; i++) {
       const ai = (await model.invoke(conversation)) as AIMessage;
-      console.log('[chat] LLM responded', { hasToolCalls: Boolean((ai as any).tool_calls?.length) });
+      const toolCallsForLog = extractToolCalls(ai);
+      console.log('[chat] LLM responded', { hasToolCalls: toolCallsForLog.length > 0 });
       // Inclui a mensagem do assistente (fará sentido no histórico para o próximo passo)
       conversation.push(ai);
-      const toolCalls: any[] = (ai as any).tool_calls ?? (ai as any).additional_kwargs?.tool_calls ?? [];
+      const toolCalls = extractToolCalls(ai);
 
       if (Array.isArray(toolCalls) && toolCalls.length > 0) {
         for (const call of toolCalls) {
           const name: string | undefined = call.name ?? call.function?.name;
-          const argsStr: string = call.args ? JSON.stringify(call.args) : call.function?.arguments ?? '{}';
+          const argsStr: string = call.args !== undefined ? JSON.stringify(call.args) : call.function?.arguments ?? '{}';
           let result = '';
           if (name === 'search_cars') {
             try {
-              const parsed = JSON.parse(argsStr);
-              result = await searchCarsFunc(parsed);
-              const parsedResult = JSON.parse(result);
-              if (parsedResult && Array.isArray(parsedResult.results)) {
-                lastSearchResults = parsedResult.results as Car[];
+              const parsedUnknown: unknown = JSON.parse(argsStr);
+              if (!isSearchCarsInput(parsedUnknown)) {
+                result = JSON.stringify({ error: 'Argumentos inválidos para search_cars' });
+              } else {
+                result = await searchCarsFunc(parsedUnknown);
               }
+              lastSearchResults = extractResultsFromJson(result);
             } catch (err) {
               result = JSON.stringify({ error: 'Falha ao buscar carros', details: err instanceof Error ? err.message : String(err) });
             }
           } else if (name === 'recommend_cars') {
             try {
-              const parsed = JSON.parse(argsStr);
-              result = await recommendCarsFunc(parsed);
-              const parsedResult = JSON.parse(result);
-              if (parsedResult && Array.isArray(parsedResult.results)) {
-                lastSearchResults = parsedResult.results as Car[];
+              const parsedUnknown: unknown = JSON.parse(argsStr);
+              if (!isRecommendCarsInput(parsedUnknown)) {
+                result = JSON.stringify({ error: 'Argumentos inválidos para recommend_cars' });
+              } else {
+                result = await recommendCarsFunc(parsedUnknown);
               }
+              lastSearchResults = extractResultsFromJson(result);
             } catch (err) {
               result = JSON.stringify({ error: 'Falha ao recomendar carros', details: err instanceof Error ? err.message : String(err) });
             }
