@@ -40,30 +40,31 @@ export function Header({ className }: HeaderProps) {
           : 'transparent'
       }}
     >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-3 sm:px-4 lg:px-8">
         <div className="flex items-center justify-between">
-          {/* Logo */}
+          {/* Logo - Mobile Responsive */}
           <Link href="/" className="flex items-center space-x-2 group">
             <div className="relative">
-              <Car className="h-8 w-8 text-primary group-hover:text-primary-dark transition-colors duration-200" />
+              <Car className="h-6 w-6 sm:h-8 sm:w-8 text-primary group-hover:text-primary-dark transition-colors duration-200" />
               <div className="absolute -inset-1 bg-primary/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
             </div>
-            <span className="text-xl font-bold text-gradient">
+            <span className="text-lg sm:text-xl font-bold text-gradient">
               CarFinder
             </span>
           </Link>
 
-          {/* Single CTA Button */}
-          <Button asChild variant="gradient" size="default">
+          {/* Single CTA Button - Mobile Responsive */}
+          <Button asChild variant="gradient" size="sm" className="text-sm sm:text-base px-3 sm:px-4 py-2 sm:py-2.5">
             {isOnChat ? (
               <Link href="/" className="flex items-center">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
+                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                <span className="hidden sm:inline">Voltar</span>
               </Link>
             ) : (
               <Link href="/chat" className="flex items-center">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Testar Agora
+                <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                <span className="hidden sm:inline">Testar Agora</span>
+                <span className="sm:hidden">Chat</span>
               </Link>
             )}
           </Button>

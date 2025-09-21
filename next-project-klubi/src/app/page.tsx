@@ -69,28 +69,28 @@ export default function LandingPage() {
       <Header />
       
       {/* Ultra-Modern Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-20 max-w-7xl mx-auto">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 sm:pt-16">
+        <div className="container mx-auto px-3 sm:px-4 lg:px-8 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-12 lg:gap-20 max-w-7xl mx-auto">
             {/* Left Content */}
             <div className="flex-1 text-left max-w-3xl lg:max-w-2xl">
               <div className="animate-fade-in">
                 <Badge 
                   variant="glass" 
                   size="lg" 
-                  className="mb-8 animate-bounce-soft glass-ultra shadow-soft border-white/40"
+                  className="mb-4 sm:mb-6 lg:mb-8 animate-bounce-soft glass-ultra shadow-soft border-white/40"
                 >
-                  <Sparkles className="h-4 w-4 animate-pulse-soft" />
-                  AI-Powered Search Engine
+                  <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 animate-pulse-soft" />
+                  <span className="text-xs sm:text-sm">AI-Powered Search Engine</span>
                 </Badge>
               </div>
               
-              <h1 className="text-7xl sm:text-8xl lg:text-9xl font-black mb-8 animate-slide-up gradient-text leading-[0.9] tracking-tight">
+              <h1 className="text-5xl sm:text-7xl lg:text-8xl xl:text-9xl font-black mb-6 sm:mb-8 animate-slide-up gradient-text leading-[0.9] tracking-tight">
                 CarFinder
-                <span className="block text-6xl sm:text-7xl lg:text-8xl mt-4 font-light">AI</span>
+                <span className="block text-4xl sm:text-6xl lg:text-7xl xl:text-8xl mt-2 sm:mt-4 font-light">AI</span>
               </h1>
               
-              <p className="text-2xl sm:text-3xl lg:text-4xl text-gray-700 mb-12 animate-slide-up leading-relaxed font-light max-w-2xl">
+              <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl text-gray-700 mb-8 sm:mb-12 animate-slide-up leading-relaxed font-light max-w-2xl">
                 Transforme qualquer busca em uma conversa inteligente
               </p>
               
@@ -99,12 +99,12 @@ export default function LandingPage() {
                   asChild 
                   size="xl" 
                   variant="gradient" 
-                  className="flex flex-row items-center gap-3 text-xl px-12 py-6 rounded-2xl shadow-2xl hover:shadow-glow-primary"
+                  className="flex flex-row items-center gap-2 sm:gap-3 text-base sm:text-lg lg:text-xl px-6 sm:px-8 lg:px-12 py-4 sm:py-5 lg:py-6 rounded-xl sm:rounded-2xl shadow-2xl hover:shadow-glow-primary"
                 >
-                  <Link href="/chat" className="flex flex-row items-center gap-3">
-                    <MessageCircle className="h-7 w-7" />
+                  <Link href="/chat" className="flex flex-row items-center gap-2 sm:gap-3">
+                    <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
                     <span>Experimentar Demo</span>
-                    <ArrowRight className="h-7 w-7" />
+                    <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
                   </Link>
                 </Button>
               </div>

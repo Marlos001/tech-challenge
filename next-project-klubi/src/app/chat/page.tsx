@@ -5,23 +5,11 @@ import { Header } from '@/components/layout/Header';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { cn } from '@/lib/utils';
 import { ChatMessage as ChatMessageType, Car } from '@/types/car';
 import { 
   MessageCircle, 
-  Sparkles, 
-  Trash2, 
-  Download,
-  RefreshCw,
-  Zap,
-  Car as CarIcon,
-  Search
+  Trash2
 } from 'lucide-react';
-import carsData from '@/data/cars.json';
-
-const cars = carsData as Car[];
 
 const welcomeMessage: ChatMessageType = {
   id: '1',
@@ -38,33 +26,6 @@ Como posso te ajudar hoje?`,
   timestamp: new Date(),
 };
 
-const mockResponses = [
-  {
-    keywords: ['suv', 'elétrico', 'eletrico'],
-    response: 'Ótima escolha! SUVs elétricos são o futuro da mobilidade. Encontrei algumas opções incríveis para você:',
-    cars: cars.filter(car => car.Name === 'BYD' || car.Model.toLowerCase().includes('cross')),
-  },
-  {
-    keywords: ['honda', 'civic'],
-    response: 'O Honda Civic é uma excelente escolha! É conhecido pela confiabilidade e economia. Aqui estão as opções disponíveis:',
-    cars: cars.filter(car => car.Name === 'Honda'),
-  },
-  {
-    keywords: ['100000', '100.000', 'cem mil'],
-    response: 'Vou mostrar os melhores carros até R$ 100.000. Você tem várias opções excelentes nessa faixa:',
-    cars: cars.filter(car => car.Price <= 100000),
-  },
-  {
-    keywords: ['são paulo', 'sp'],
-    response: 'São Paulo tem uma grande variedade de carros disponíveis! Aqui estão as opções na região:',
-    cars: cars.filter(car => car.Location.toLowerCase().includes('são paulo')),
-  },
-  {
-    keywords: ['barato', 'económico', 'economico', 'mais barato'],
-    response: 'Vou te mostrar as opções mais econômicas disponíveis. Ótimas escolhas para quem busca valor:',
-    cars: cars.sort((a, b) => a.Price - b.Price).slice(0, 3),
-  },
-];
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
@@ -171,68 +132,69 @@ export default function ChatPage() {
       <Header />
       
       <div className="pt-16 pb-6">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+        <div className="container mx-auto px-3 sm:px-4 lg:px-8 max-w-6xl">
           <div className="h-[calc(100vh-100px)] flex flex-col">
-            {/* Ultra-Modern Chat Header */}
-            <div className="glass-card rounded-3xl p-6 mb-6 animate-fade-in shadow-lifted">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-6">
+            {/* Ultra-Modern Chat Header - Mobile Responsive */}
+            <div className="glass-card rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-4 sm:mb-6 animate-fade-in shadow-lifted">
+              <div className="flex items-center justify-between flex-col sm:flex-row gap-4 sm:gap-0">
+                <div className="flex items-center space-x-3 sm:space-x-6 text-center sm:text-left">
                   <div className="relative">
-                    <div className="w-20 h-20 gradient-primary rounded-3xl flex items-center justify-center shadow-2xl animate-glow">
-                      <MessageCircle className="h-10 w-10 text-white" />
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 gradient-primary rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-2xl animate-glow">
+                      <MessageCircle className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
                     </div>
-                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-400 rounded-full border-4 border-white animate-pulse shadow-lg" />
+                    <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-green-400 rounded-full border-3 sm:border-4 border-white animate-pulse shadow-lg" />
                   </div>
                   <div>
-                    <h1 className="text-4xl font-black gradient-text">CarFinder AI</h1>
-                    <p className="text-gray-600 flex items-center gap-3 text-lg">
-                      <span className="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-sm"></span>
-                      Assistente Inteligente Online
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black gradient-text">CarFinder AI</h1>
+                    <p className="text-gray-600 flex items-center gap-2 sm:gap-3 text-sm sm:text-lg justify-center sm:justify-start">
+                      <span className="w-2 h-2 sm:w-3 sm:h-3 bg-green-400 rounded-full animate-pulse shadow-sm"></span>
+                      <span className="hidden sm:inline">Assistente Inteligente Online</span>
+                      <span className="sm:hidden">Online</span>
                     </p>
                   </div>
                 </div>
 
                 <Button
-                  size="lg"
+                  size="sm"
                   variant="glass"
                   onClick={clearChat}
-                  className="hover-lift rounded-2xl px-6 py-3 flex items-center font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="hover-lift rounded-xl sm:rounded-2xl px-4 sm:px-6 py-2 sm:py-3 flex items-center font-semibold shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base w-full sm:w-auto justify-center"
                 >
                   <span className="flex items-center gap-2">
-                    <Trash2 className="h-5 w-5" />
+                    <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span>Novo Chat</span>
                   </span>
                 </Button>
               </div>
             </div>
 
-            {/* Ultra-Modern Chat Container */}
-            <div className="glass-card rounded-3xl flex-1 flex flex-col overflow-hidden shadow-2xl">
-              {/* Welcome State */}
+            {/* Ultra-Modern Chat Container - Mobile Responsive */}
+            <div className="glass-card rounded-2xl sm:rounded-3xl flex-1 flex flex-col overflow-hidden shadow-2xl">
+              {/* Welcome State - Mobile Responsive */}
               {messages.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center p-8">
-                  <div className="text-center animate-slide-up">
-                    <div className="relative inline-block mb-8">
-                      <div className="w-24 h-24 gradient-primary rounded-3xl flex items-center justify-center shadow-2xl animate-bounce-soft">
-                        <MessageCircle className="h-12 w-12 text-white" />
+                <div className="flex-1 flex items-center justify-center p-4 sm:p-8">
+                  <div className="text-center animate-slide-up max-w-sm sm:max-w-lg">
+                    <div className="relative inline-block mb-6 sm:mb-8">
+                      <div className="w-20 h-20 sm:w-24 sm:h-24 gradient-primary rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-2xl animate-bounce-soft">
+                        <MessageCircle className="h-10 w-10 sm:h-12 sm:w-12 text-white" />
                       </div>
-                      <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-secondary to-accent rounded-full animate-float" />
+                      <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-secondary to-accent rounded-full animate-float" />
                     </div>
-                    <h3 className="text-3xl font-bold text-gray-900 mb-4">
+                    <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
                       Olá! Sou o CarFinder AI 👋
                     </h3>
-                    <p className="text-xl text-gray-600 max-w-lg mx-auto leading-relaxed">
+                    <p className="text-base sm:text-lg lg:text-xl text-gray-600 mx-auto leading-relaxed px-2">
                       Estou aqui para ajudar você a encontrar o carro perfeito. 
-                      <br />
+                      <br className="hidden sm:block" />
                       <span className="font-medium">O que você está procurando?</span>
                     </p>
                   </div>
                 </div>
               ) : (
-                /* Chat Messages */
+                /* Chat Messages - Mobile Responsive */
                 <div 
                   ref={chatContainerRef}
-                  className="flex-1 overflow-y-auto p-8 space-y-8"
+                  className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 lg:space-y-8"
                   style={{
                     background: 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)'
                   }}
@@ -259,8 +221,8 @@ export default function ChatPage() {
                 </div>
               )}
 
-              {/* Ultra-Modern Chat Input */}
-              <div className="p-8 border-t border-white/20 bg-white/50 backdrop-blur-sm">
+              {/* Ultra-Modern Chat Input - Mobile Responsive */}
+              <div className="p-3 sm:p-6 lg:p-8 border-t border-white/20 bg-white/50 backdrop-blur-sm">
                 <ChatInput
                   onSend={handleSendMessage}
                   isLoading={isLoading}
