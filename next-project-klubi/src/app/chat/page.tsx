@@ -72,35 +72,46 @@ export default function ChatPage() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const lastAssistantMessageRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const scrollToLastAssistant = () => {
+    lastAssistantMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
+    // Only scroll to bottom for user messages and typing
+    if (isTyping) {
+      scrollToBottom();
+    }
+  }, [isTyping]);
 
-  const generateResponse = (userMessage: string): { response: string; cars: Car[] } => {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    // Find matching mock response
-    const mockResponse = mockResponses.find(mock =>
-      mock.keywords.some(keyword => lowerMessage.includes(keyword))
-    );
+  useEffect(() => {
+    // When a new assistant message is added, scroll to its top
+    if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+      setTimeout(() => scrollToLastAssistant(), 100);
+    }
+  }, [messages]);
 
-    if (mockResponse) {
+  const callChatApi = async (text: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<{ response: string; cars: Car[] }> => {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history }),
+    });
+    if (!res.ok) {
       return {
-        response: mockResponse.response,
-        cars: mockResponse.cars,
+        response: 'Desculpe, ocorreu um erro ao processar sua mensagem. Pode tentar novamente?',
+        cars: [],
       };
     }
-
-    // Default response with random cars
-    const randomCars = cars.sort(() => 0.5 - Math.random()).slice(0, 2);
+    const data = await res.json();
     return {
-      response: `Entendi sua busca! Baseado no que você mencionou, encontrei algumas opções que podem interessar. Dê uma olhada:`,
-      cars: randomCars,
+      response: data.message ?? 'Aqui estão algumas opções que selecionei para você.',
+      cars: (data.cars as Car[]) ?? [],
     };
   };
 
@@ -125,14 +136,19 @@ export default function ChatPage() {
     setIsLoading(true);
     setIsTyping(true);
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Call chat API
+    let response = '';
+    let matchedCars: Car[] = [];
+    try {
+      const historyPayload = (isFirstMessage ? [] : messages).slice(-12).map((m) => ({ role: m.role, content: m.content }));
+      const result = await callChatApi(content, historyPayload);
+      response = result.response;
+      matchedCars = result.cars;
+    } catch {
+      response = 'Tive um problema para buscar agora. Pode repetir sua mensagem?';
+      matchedCars = [];
+    }
     setIsTyping(false);
-
-    // Generate response
-    const { response, cars: matchedCars } = generateResponse(content);
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
 
     const assistantMessage: ChatMessageType = {
       id: (Date.now() + 1).toString(),
@@ -221,8 +237,10 @@ export default function ChatPage() {
                     background: 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)'
                   }}
                 >
-                  {messages.map((message) => (
-                    <ChatMessage key={message.id} message={message} />
+                  {messages.map((message, index) => (
+                    <div key={message.id} ref={index === messages.length - 1 && message.role === 'assistant' ? lastAssistantMessageRef : null}>
+                      <ChatMessage message={message} />
+                    </div>
                   ))}
                   
                   {isTyping && (

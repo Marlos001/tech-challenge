@@ -9,7 +9,11 @@
       "side": "/car_images/dolphin/side-view.jpg"
     },
     "Price": 99990,
-    "Location": "São Paulo"
+    "Location": "São Paulo",
+    "Powertrain": "electric",
+    "Body": "hatch",
+    "Seats": 5,
+    "Tags": ["city", "economy", "tech", "comfort"]
   },
   {
     "Name": "Toyota",
@@ -21,7 +25,11 @@
       "side": "/car_images/corolla/side-view.jpeg"
     },
     "Price": 112000,
-    "Location": "São Paulo"
+    "Location": "São Paulo",
+    "Powertrain": "flex",
+    "Body": "sedan",
+    "Seats": 5,
+    "Tags": ["comfort", "travel", "family"]
   },
   {
     "Name": "Volkswagen",
@@ -33,7 +41,11 @@
       "side": "/car_images/t-cross/side-view.jpeg"
     },
     "Price": 118500,
-    "Location": "Campinas"
+    "Location": "Campinas",
+    "Powertrain": "flex",
+    "Body": "suv",
+    "Seats": 5,
+    "Tags": ["family", "adventure", "travel"]
   },
   {
     "Name": "Honda",
@@ -45,7 +57,11 @@
       "side": "/car_images/civic/side-view.jpg"
     },
     "Price": 105000,
-    "Location": "Rio de Janeiro"
+    "Location": "Rio de Janeiro",
+    "Powertrain": "flex",
+    "Body": "sedan",
+    "Seats": 5,
+    "Tags": ["comfort", "performance", "travel"]
   },
   {
     "Name": "Chevrolet",
@@ -57,7 +73,11 @@
       "side": "/car_images/onix/side-view.jpg"
     },
     "Price": 85000,
-    "Location": "Belo Horizonte"
+    "Location": "Belo Horizonte",
+    "Powertrain": "flex",
+    "Body": "hatch",
+    "Seats": 5,
+    "Tags": ["economy", "city"]
   },
   {
     "Name": "Hyundai",
@@ -69,7 +89,11 @@
       "side": "/car_images/hb20/side-view.jpg"
     },
     "Price": 79000,
-    "Location": "São Paulo"
+    "Location": "São Paulo",
+    "Powertrain": "flex",
+    "Body": "hatch",
+    "Seats": 5,
+    "Tags": ["economy", "city"]
   },
   {
     "Name": "Renault",
@@ -81,7 +105,11 @@
       "side": "/car_images/kwid/side-view.jpg"
     },
     "Price": 68990,
-    "Location": "Curitiba"
+    "Location": "Curitiba",
+    "Powertrain": "flex",
+    "Body": "hatch",
+    "Seats": 5,
+    "Tags": ["economy", "city"]
   },
   {
     "Name": "Fiat",
@@ -93,7 +121,11 @@
       "side": "/car_images/pulse/side-view.jpg"
     },
     "Price": 96000,
-    "Location": "São Paulo"
+    "Location": "São Paulo",
+    "Powertrain": "flex",
+    "Body": "suv",
+    "Seats": 5,
+    "Tags": ["family", "city"]
   },
   {
     "Name": "Jeep",
@@ -105,7 +137,11 @@
       "side": "/car_images/renegade/side-view.jpg"
     },
     "Price": 122000,
-    "Location": "Porto Alegre"
+    "Location": "Porto Alegre",
+    "Powertrain": "flex",
+    "Body": "suv",
+    "Seats": 5,
+    "Tags": ["adventure", "family", "travel"]
   },
   {
     "Name": "Peugeot",
@@ -117,6 +153,10 @@
       "side": "/car_images/208/side-view.jpg"
     },
     "Price": 87500,
-    "Location": "São Paulo"
+    "Location": "São Paulo",
+    "Powertrain": "flex",
+    "Body": "hatch",
+    "Seats": 5,
+    "Tags": ["city", "economy"]
   }
 ]

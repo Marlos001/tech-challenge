@@ -9,6 +9,11 @@ export interface Car {
   };
   Price: number;
   Location: string;
+  Powertrain?: 'electric' | 'hybrid' | 'flex' | 'gasoline' | 'diesel';
+  Body?: 'hatch' | 'sedan' | 'suv';
+  Seats?: number;
+  TrunkLiters?: number;
+  Tags?: string[]; // e.g., ['family', 'city', 'economy', 'tech', 'adventure', 'comfort']
 }
 
 export interface SearchFilters {
@@ -17,6 +22,11 @@ export interface SearchFilters {
   location?: string;
   minPrice?: number;
   maxPrice?: number;
+  powertrain?: Car['Powertrain'];
+  body?: Car['Body'];
+  minSeats?: number;
+  tags?: string[];
+  limit?: number;
 }
 
 export interface ChatMessage {
@@ -26,6 +36,9 @@ export interface ChatMessage {
   timestamp: Date;
   cars?: Car[];
 }
+
+export type RecommendationProfileTag = 'family' | 'city' | 'economy' | 'tech' | 'adventure' | 'comfort' | 'performance' | 'travel';
+
 
 
 
