@@ -26,6 +26,11 @@ export async function POST(request: NextRequest) {
     const combinedText = `${historyText} \n ${normMsg}`;
     const askAll = /(todos|todas|all)\s+(os\s+)?carros/.test(normMsg) || /(carros).*(brasil|pa[ií]s|estado|estados)/.test(normMsg);
 
+    // Precompute unique sets for reuse
+    const uniqueLocations = Array.from(new Set((cars || []).map((c) => normalize(c.Location))));
+    const uniqueBrands = Array.from(new Set((cars || []).map((c) => normalize(c.Name))));
+    const uniqueModels = Array.from(new Set((cars || []).map((c) => normalize(c.Model))));
+
     const cityToUf: Record<string, string> = {
       'sao paulo': 'sp',
       'campinas': 'sp',
@@ -58,6 +63,28 @@ export async function POST(request: NextRequest) {
         .map((w) => w[0])
         .join('');
       return [normCity, uf, initials].filter(Boolean) as string[];
+    };
+
+    const getRequestedUF = (location?: string) => {
+      const loc = cleanLocationPhrase(location);
+      if (!loc) return undefined;
+      if (/^[a-z]{2}$/i.test(loc)) return loc;
+      if (stateToUf[loc]) return stateToUf[loc];
+      if (cityToUf[loc]) return cityToUf[loc];
+      return undefined;
+    };
+
+    const dedupeCars = (list: Car[], max: number = 6) => {
+      const seen = new Set<string>();
+      const out: Car[] = [];
+      for (const c of list) {
+        const key = `${c.Name}|${c.Model}|${c.Location}|${c.Price}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(c);
+        if (out.length >= max) break;
+      }
+      return out;
     };
 
     // Simple fuzzy matching helpers for brand/model extraction
@@ -99,13 +126,7 @@ export async function POST(request: NextRequest) {
       const body = normalize(input?.body);
       const minSeats = typeof input?.minSeats === 'number' ? input.minSeats : undefined;
       const tags: string[] = Array.isArray(input?.tags) ? (input.tags as string[]).map((t) => normalize(String(t))) : [];
-      const requestedUF = (() => {
-        if (!location) return undefined;
-        if (/^[a-z]{2}$/i.test(location)) return location as string; // uf like 'sp'
-        if (stateToUf[location]) return stateToUf[location];
-        if (cityToUf[location]) return cityToUf[location];
-        return undefined;
-      })();
+      const requestedUF = getRequestedUF(location);
       const minPrice = typeof input?.minPrice === 'number' ? input.minPrice : 0;
       const maxPrice = typeof input?.maxPrice === 'number' ? input.maxPrice : Number.MAX_SAFE_INTEGER;
       const datasetSize = Array.isArray(cars) ? cars.length : 0;
@@ -143,17 +164,98 @@ export async function POST(request: NextRequest) {
       return JSON.stringify({ count: results.length, results });
     };
 
+    const formatBRL = (value?: number) =>
+      typeof value === 'number' ? `R$ ${value.toLocaleString('pt-BR')}` : undefined;
+
+    const summarizeCar = (car: Car) => {
+      return {
+        name: car.Name,
+        model: car.Model,
+        priceBRL: formatBRL(car.Price),
+        location: car.Location,
+        powertrain: car.Powertrain,
+        body: car.Body,
+        seats: car.Seats,
+        tags: Array.isArray(car.Tags) ? car.Tags : [],
+      } as const;
+    };
+
+    const generateSalesCopyWithLLM = async (opts: {
+      primary: Car[];
+      similar?: Car[];
+      similarInRegion?: Car[];
+      stretch?: Car[];
+      budget?: number;
+      userUF?: string;
+      contextNote?: string;
+    }): Promise<string> => {
+      if (!hasApiKey) {
+        // Fallback safeguard
+        const first = opts.primary[0];
+        return [
+          `Aqui está uma ótima opção para você: **${first.Name} ${first.Model}**.`,
+          `- Preço: **${formatBRL(first.Price)}**`,
+          opts.userUF && cityToUf[normalize(first.Location)] === opts.userUF ? '- **Disponível na sua região** (entrega rápida)' : undefined,
+          typeof opts.budget === 'number'
+            ? (first.Price <= (opts.budget ?? 0)
+                ? '- **Dentro do seu orçamento**'
+                : `- **Acima do seu orçamento** (${formatBRL(first.Price)} > ${formatBRL(opts.budget)})`)
+            : undefined,
+          '\n**Quer que eu separe essa opção para você?**',
+        ].filter(Boolean).join('\n');
+      }
+
+      const llm = new ChatOpenAI({
+        apiKey,
+        model: 'gpt-4o',
+        temperature: 0.6,
+      });
+
+      const carsContext = {
+        primary: opts.primary.map(summarizeCar),
+        similar: (opts.similar || []).map(summarizeCar),
+        similarInRegion: (opts.similarInRegion || []).map(summarizeCar),
+        stretch: (opts.stretch || []).map(summarizeCar),
+      };
+
+      const lines: string[] = [];
+      if (opts.userUF) lines.push(`Localização do usuário (UF): ${opts.userUF.toUpperCase()}`);
+      if (typeof opts.budget === 'number') lines.push(`Orçamento do usuário: ${formatBRL(opts.budget)}`);
+      if (opts.contextNote) lines.push(`Observação: ${opts.contextNote}`);
+
+      const sys = new SystemMessage([
+        'Você é o CarFinder AI, especialista em ajudar na decisão de compra.',
+        'Escreva respostas concisas e persuasivas baseadas SOMENTE nos dados fornecidos.',
+        'Formato:',
+        '1) Abra com 1 frase direta.',
+        '2) Em seguida liste 4-6 bullets com motivos de compra alinhados ao perfil do usuário. Use **negrito** para pontos-chave.',
+        '3) Compare rapidamente com 1-2 alternativas (se fornecidas), explicando por que a principal faz sentido.',
+        '4) Conclua com um CTA curto: **Quer que eu separe essa opção para você?**',
+        'Inclua preço, localização e atributos como powertrain, carroceria, assentos e tags quando relevantes.',
+        'Se o preço superar o orçamento, trate objeções (financiamento, baixo consumo, revenda) e sugira 1-2 opções dentro ou próximas do orçamento.',
+        'Se a localização diferir, destaque disponibilidade fora da região e sugira similares na região do usuário.',
+        'Nunca invente especificações que não estejam nos dados.',
+      ].join(' '));
+
+      const human = new HumanMessage([
+        'Contexto do usuário:',
+        lines.join(' | ') || 'Sem contexto adicional',
+        '',
+        'Dados garantidos dos carros (JSON):',
+        JSON.stringify(carsContext, null, 2),
+        '',
+        'Escreva a resposta seguindo o formato solicitado.',
+      ].join('\n'));
+
+      const ai = await llm.invoke([sys, human]);
+      return ai.content as string;
+    };
+
     // Recommendation with scoring based on profile and constraints
     const recommendCarsFunc = async (input: any) => {
       const budget: number | undefined = typeof input?.budget === 'number' ? input.budget : undefined;
       const location = cleanLocationPhrase(input?.location);
-      const requestedUF = (() => {
-        if (!location) return undefined;
-        if (/^[a-z]{2}$/i.test(location)) return location as string;
-        if (stateToUf[location]) return stateToUf[location];
-        if (cityToUf[location]) return cityToUf[location];
-        return undefined;
-      })();
+      const requestedUF = getRequestedUF(location);
       const usage: string = normalize(input?.usage); // city | highway | mixed
       const familySize: number | undefined = typeof input?.familySize === 'number' ? input.familySize : undefined;
       const preferSUV: boolean = Boolean(input?.preferSUV);
@@ -260,12 +362,12 @@ export async function POST(request: NextRequest) {
 
     const inferredMax = extractMaxBudget(combinedText);
 
-    // Details intent detection ("show me more" about a specific car)
-    const detailsIntent = /(detalh|mostrar|mostre|ver\s+mais|mais\s+do|quero\s+ver|fotos|interior|traseira|porta[-\s]?malas)/.test(normMsg);
-    const uniqueBrands = Array.from(new Set(cars.map((c) => normalize(c.Name))));
-    const uniqueModels = Array.from(new Set(cars.map((c) => normalize(c.Model))));
+    // Details/buy intent detection ("show me more" or "I want this one")
+    const detailsIntent = /(detalh|mostrar|mostre|ver\s+mais|mais\s+do|quero\s+ver|fotos|interior|traseira|porta[-\s]?malas|fale|fala)/.test(normMsg);
+    const buyIntent = /(quero\s+(o\s+|a\s+|ele|esse|essa|este|esta|comprar|fechar)|comprar\b|fechar\b|vou\s+levar|ficar\s+com|escolho\s+|prefiro\s+|fico\s+com|mesmo\b)/.test(normMsg);
+    const specificChoiceIntent = /(quero\s+(o\s+|a\s+)\w+|mesmo\b|escolho\s+|prefiro\s+|fico\s+com)/.test(normMsg);
 
-    if (detailsIntent) {
+    if (detailsIntent || buyIntent) {
       // Try to resolve brand and model from current message or history
       const brandFromMsg = uniqueBrands.find((b) => b && (normMsg.includes(b) || fuzzyIncludes(normMsg, b)));
       const modelFromMsg = uniqueModels.find((m) => m && (normMsg.includes(m) || fuzzyIncludes(normMsg, m)));
@@ -276,33 +378,45 @@ export async function POST(request: NextRequest) {
       const model = modelFromMsg || modelFromHist;
 
       let target: Car | undefined;
-      if (brand && model) target = (cars || []).find((c) => normalize(c.Name) === brand && normalize(c.Model) === model);
-      else if (brand) target = (cars || []).filter((c) => normalize(c.Name) === brand).sort((a, b) => a.Price - b.Price)[0];
-      else if (model) target = (cars || []).find((c) => normalize(c.Model) === model);
+      if (brand && model) {
+        // Find exact brand+model match
+        target = (cars || []).find((c) => normalize(c.Name) === brand && normalize(c.Model) === model);
+      } else if (brand) {
+        target = (cars || []).filter((c) => normalize(c.Name) === brand).sort((a, b) => a.Price - b.Price)[0];
+      } else if (model) {
+        target = (cars || []).find((c) => normalize(c.Model) === model);
+      }
 
       if (target) {
         const userUF = inferredLocation;
-        const bullets: string[] = [];
-        if (typeof inferredMax === 'number') {
-          if (target.Price <= inferredMax) bullets.push('**Dentro do seu orçamento**');
-          else bullets.push(`**Acima do seu orçamento** (R$ ${target.Price.toLocaleString('pt-BR')} > R$ ${inferredMax.toLocaleString('pt-BR')})`);
+        let messageText = '';
+        try {
+          messageText = await generateSalesCopyWithLLM({
+            primary: [target],
+            budget: inferredMax,
+            userUF,
+          });
+        } catch {
+          const bullets: string[] = [];
+          if (typeof inferredMax === 'number') {
+            if (target.Price <= inferredMax) bullets.push('**Dentro do seu orçamento**');
+            else bullets.push(`**Acima do seu orçamento** (${formatBRL(target.Price)} > ${formatBRL(inferredMax)})`);
+          }
+          if (target.Powertrain === 'electric') bullets.push('**Elétrico** (zero emissões)');
+          if (target.Body === 'suv') bullets.push('**SUV** com versatilidade');
+          if (typeof target.Seats === 'number') bullets.push(`${target.Seats} assentos`);
+          bullets.push(`Disponível em ${target.Location}`);
+          messageText = [
+            `Aqui estão mais detalhes do **${target.Name} ${target.Model}**:`,
+            `- Preço: **${formatBRL(target.Price)}**`,
+            ...bullets.map((b) => `- ${b}`),
+            '',
+            '**Quer que eu separe essa opção para você?**',
+          ].join('\n');
         }
-        if (target.Powertrain === 'electric') bullets.push('**Elétrico** (zero emissões)');
-        if (target.Body === 'suv') bullets.push('**SUV** com versatilidade');
-        if (typeof target.Seats === 'number') bullets.push(`${target.Seats} assentos`);
-        bullets.push(`Disponível em ${target.Location}`);
-
-        const detailsMsg = [
-          `Aqui estão mais detalhes do **${target.Name} ${target.Model}**:`,
-          `- Preço: **R$ ${target.Price.toLocaleString('pt-BR')}**`,
-          ...bullets.map((b) => `- ${b}`),
-          '',
-          'Quer ver o **interior** ou a visão **3/4**? Posso destacar os pontos fortes para o seu uso.',
-          '**Quer que eu separe essa opção para você?**',
-        ].join('\n');
 
         return NextResponse.json({
-          message: detailsMsg,
+          message: messageText,
           cars: [target],
           success: true,
         });
@@ -310,35 +424,7 @@ export async function POST(request: NextRequest) {
       // fall through to normal flow if not resolved
     }
 
-    // Helper: build salesman-style message
-    const buildSalesmanMessage = (primary: Car[], opts: { budget?: number; userUF?: string; requestedUF?: string; similarInRegion?: Car[]; similar?: Car[]; stretch?: Car[]; contextNote?: string }) => {
-      const first = primary[0];
-      const bullets: string[] = [];
-      if (opts.userUF && cityToUf[normalize(first.Location)] === opts.userUF) bullets.push('**Disponível na sua região** (entrega rápida)');
-      if (typeof opts.budget === 'number') {
-        if (first.Price <= opts.budget) bullets.push('**Dentro do seu orçamento**');
-        else bullets.push(`**Acima do seu orçamento** (R$ ${first.Price.toLocaleString('pt-BR')} > R$ ${opts.budget.toLocaleString('pt-BR')}). Condições de **financiamento** e ótimo **valor de revenda**.`);
-      }
-      const tags = Array.isArray(first.Tags) ? first.Tags : [];
-      if (tags.includes('economy')) bullets.push('**Econômico** no dia a dia');
-      if (tags.includes('tech')) bullets.push('Pacote **tecnológico** completo');
-      if (tags.includes('comfort')) bullets.push('Ótimo **conforto** e acabamento');
-      if (tags.includes('family')) bullets.push('Bom para **família**');
-      if (first.Body === 'suv') bullets.push('**SUV** com altura e versatilidade');
-
-      const lines: string[] = [];
-      lines.push(`Aqui está uma ótima opção para você: **${first.Name} ${first.Model}**.`);
-      lines.push('- ' + bullets.filter(Boolean).slice(0, 5).join('\n- '));
-      if (Array.isArray(opts.similar) && opts.similar.length > 0) {
-        lines.push('\nTambém separei **opções dentro do seu orçamento** com ótimo custo-benefício.');
-      }
-      if (Array.isArray(opts.similarInRegion) && opts.similarInRegion.length > 0) {
-        lines.push('\nTambém separei alternativas na sua região com ótimo custo-benefício.');
-      }
-      if (opts.contextNote) lines.push(`\n${opts.contextNote}`);
-      lines.push('\n**Quer que eu separe essa opção para você?**');
-      return lines.join('\n');
-    };
+    // (removido) buildSalesmanMessage substituído pelo generateSalesCopyWithLLM acima
 
     // Rule-based handling for explicit brand+model queries (test cases coverage)
     // brand+model detection for other handlers
@@ -379,7 +465,8 @@ export async function POST(request: NextRequest) {
         // Case 2: asked price below available
         let similar: Car[] = [];
         let stretch: Car[] = [];
-        if (typeof inferredMax === 'number') {
+        const strictDetails = detailsIntent || buyIntent || specificChoiceIntent;
+        if (!strictDetails && typeof inferredMax === 'number') {
           const budget = inferredMax;
           const withinBudget = (cars || []).filter((c) => c.Price <= budget).sort((a, b) => a.Price - b.Price).slice(0, 2);
           const slightlyOver = (cars || []).filter((c) => c.Price > budget && c.Price <= budget * 1.15).sort((a, b) => a.Price - b.Price).slice(0, 2);
@@ -389,7 +476,7 @@ export async function POST(request: NextRequest) {
 
         // Case 3: exists but not in user region → add similar in region
         let similarInRegion: Car[] = [];
-        if (userUF && !foundInRegion) {
+        if (!strictDetails && userUF && !foundInRegion) {
           const body = primary[0].Body;
           const tags = primary[0].Tags || [];
           similarInRegion = (cars || []).filter((c) => {
@@ -411,25 +498,21 @@ export async function POST(request: NextRequest) {
           ? 'O modelo está disponível fora da sua região. Sugeri alternativas locais parecidas.'
           : undefined;
 
-        const messageText = buildSalesmanMessage(primary, {
+        const messageText = await generateSalesCopyWithLLM({
+          primary,
           budget: inferredMax,
           userUF,
-          requestedUF: userUF,
           similarInRegion,
           similar,
           stretch,
           contextNote,
         });
 
-        // Merge similar (within budget) first, then primary, then stretch and region similars (avoid duplicates)
-        const allCars = [...similar, ...primary, ...stretch, ...similarInRegion];
-        const seen = new Set<string>();
-        const deduped = allCars.filter((c) => {
-          const key = `${c.Name}|${c.Model}|${c.Location}|${c.Price}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        }).slice(0, 6);
+        // If user asked for details/buy/specific choice, return only the primary car; otherwise merge options
+        const allCars = (detailsIntent || buyIntent || specificChoiceIntent)
+          ? primary.slice(0, 1)
+          : [...similar, ...primary, ...stretch, ...similarInRegion];
+        const deduped = dedupeCars(allCars, 6);
 
         return NextResponse.json({
           message: messageText,
@@ -454,7 +537,8 @@ export async function POST(request: NextRequest) {
         // Alternatives by budget and slight stretch
         let similar: Car[] = [];
         let stretch: Car[] = [];
-        if (typeof inferredMax === 'number') {
+        const strictDetails = detailsIntent || buyIntent || specificChoiceIntent;
+        if (!strictDetails && typeof inferredMax === 'number') {
           const budget = inferredMax;
           similar = (cars || [])
             .filter((c) => c.Price <= budget)
@@ -468,7 +552,7 @@ export async function POST(request: NextRequest) {
 
         let similarInRegion: Car[] = [];
         const primaryInRegion = cheapestInRegion && cityToUf[normalize(cheapestInRegion.Location)] === userUF;
-        if (userUF && !primaryInRegion) {
+        if (!strictDetails && userUF && !primaryInRegion) {
           const body = primary[0].Body;
           const tags = primary[0].Tags || [];
           similarInRegion = (cars || [])
@@ -498,26 +582,18 @@ export async function POST(request: NextRequest) {
             : 'O modelo está disponível fora da sua região. Selecionei alternativas locais parecidas.';
         }
 
-        const messageText = buildSalesmanMessage(primary, {
+        const messageText = await generateSalesCopyWithLLM({
+          primary,
           budget: inferredMax,
           userUF,
-          requestedUF: userUF,
           similar,
           similarInRegion,
           stretch,
           contextNote,
         });
 
-        const allCars = [...similar, ...primary, ...stretch, ...similarInRegion];
-        const seen = new Set<string>();
-        const deduped = allCars
-          .filter((c) => {
-            const key = `${c.Name}|${c.Model}|${c.Location}|${c.Price}`;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          })
-          .slice(0, 6);
+        const allCars = strictDetails ? primary.slice(0, 1) : [...similar, ...primary, ...stretch, ...similarInRegion];
+        const deduped = dedupeCars(allCars, 6);
 
         return NextResponse.json({ message: messageText, cars: deduped, success: true });
       }
@@ -540,7 +616,8 @@ export async function POST(request: NextRequest) {
         // Alternatives within budget and slight stretch
         let similar: Car[] = [];
         let stretch: Car[] = [];
-        if (typeof inferredMax === 'number') {
+        const strictDetails = detailsIntent || buyIntent || specificChoiceIntent;
+        if (!strictDetails && typeof inferredMax === 'number') {
           const budget = inferredMax;
           similar = (cars || []).filter((c) => c.Price <= budget).sort((a, b) => a.Price - b.Price).slice(0, 3);
           stretch = (cars || []).filter((c) => c.Price > budget && c.Price <= budget * 1.15).sort((a, b) => a.Price - b.Price).slice(0, 2);
@@ -548,7 +625,7 @@ export async function POST(request: NextRequest) {
 
         // Similar in region if primary not in region
         let similarInRegion: Car[] = [];
-        if (userUF && (!cheapestInRegion || cityToUf[normalize(primary[0].Location)] !== userUF)) {
+        if (!strictDetails && userUF && (!cheapestInRegion || cityToUf[normalize(primary[0].Location)] !== userUF)) {
           const body = primary[0].Body;
           const tags = primary[0].Tags || [];
           similarInRegion = (cars || []).filter((c) => {
@@ -563,24 +640,18 @@ export async function POST(request: NextRequest) {
           ? `A opção mais barata da marca está acima do seu orçamento.`
           : undefined;
 
-        const messageText = buildSalesmanMessage(primary, {
+        const messageText = await generateSalesCopyWithLLM({
+          primary,
           budget: inferredMax,
           userUF,
-          requestedUF: userUF,
           similar,
           similarInRegion,
           stretch,
           contextNote,
         });
 
-        const allCars = [...similar, ...primary, ...stretch, ...similarInRegion];
-        const seen = new Set<string>();
-        const deduped = allCars.filter((c) => {
-          const key = `${c.Name}|${c.Model}|${c.Location}|${c.Price}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        }).slice(0, 6);
+        const allCars = strictDetails ? primary.slice(0, 1) : [...similar, ...primary, ...stretch, ...similarInRegion];
+        const deduped = dedupeCars(allCars, 6);
 
         return NextResponse.json({
           message: messageText,
@@ -604,9 +675,6 @@ export async function POST(request: NextRequest) {
     if (!hasApiKey) {
       console.warn('[chat] OPENAI_API_KEY ausente. Usando busca local básica.');
       // Heurística simples: tenta localizar por localização, marca e modelo usando o dataset
-      const uniqueLocations = Array.from(new Set(cars.map((c) => normalize(c.Location))));
-      const uniqueBrands = Array.from(new Set(cars.map((c) => normalize(c.Name))));
-      const uniqueModels = Array.from(new Set(cars.map((c) => normalize(c.Model))));
 
       const detectPowertrain = (): string | undefined => {
         if (/(eletric|el[eé]tric|ev|el[eé]trico)/.test(normMsg)) return 'electric';

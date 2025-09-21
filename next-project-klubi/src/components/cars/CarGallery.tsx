@@ -6,7 +6,7 @@ import type { Car } from '@/types/car';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { cn, formatPrice } from '@/lib/utils';
-import { MapPin, Calendar, Fuel, Settings } from 'lucide-react';
+import { MapPin, Calendar, Fuel, Settings, MessageCircle, Phone, Mail } from 'lucide-react';
 
 export function CarGallery({ car }: { car: Car }) {
   const [angle, setAngle] = React.useState<'quarter' | 'side' | 'back' | 'interior'>('quarter');
@@ -135,14 +135,46 @@ export function CarGallery({ car }: { car: Car }) {
             <h3 className="text-2xl font-bold mb-4">Interessado neste veículo?</h3>
             <p className="text-xl opacity-90 mb-6">Entre em contato para mais informações e agendamento de test drive.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="outline" className="bg-white text-primary border-white hover:bg-gray-50">
-                💬 WhatsApp
+              <Button
+                size="lg"
+                variant="outline"
+                className="bg-white text-primary border-white hover:bg-gray-50"
+                asChild
+              >
+                <a
+                  href={`https://wa.me/5511999999999?text=Olá! Tenho interesse no ${car.Name} ${car.Model} por ${formatPrice(car.Price)}. Poderia me passar mais informações?`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  <span>WhatsApp</span>
+                </a>
               </Button>
-              <Button size="lg" variant="outline" className="bg-white text-primary border-white hover:bg-gray-50">
-                📞 Ligar
+              <Button
+                size="lg"
+                variant="outline"
+                className="bg-white text-primary border-white hover:bg-gray-50"
+                asChild
+              >
+                <a href="tel:+5511999999999" className="flex items-center gap-2">
+                  <Phone className="h-5 w-5" />
+                  <span>Ligar</span>
+                </a>
               </Button>
-              <Button size="lg" variant="outline" className="bg-white text-primary border-white hover:bg-gray-50">
-                ✉️ E-mail
+              <Button
+                size="lg"
+                variant="outline"
+                className="bg-white text-primary border-white hover:bg-gray-50"
+                asChild
+              >
+                <a
+                  href={`mailto:contato@carfinder.com?subject=Interesse no ${car.Name} ${car.Model}&body=Olá! Tenho interesse no ${car.Name} ${car.Model} por ${formatPrice(car.Price)}. Poderia me passar mais informações?`}
+                  className="flex items-center gap-2"
+                >
+                  <Mail className="h-5 w-5" />
+                  <span>E-mail</span>
+                </a>
               </Button>
             </div>
           </div>

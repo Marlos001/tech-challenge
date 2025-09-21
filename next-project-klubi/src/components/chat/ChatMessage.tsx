@@ -310,6 +310,7 @@ function CarCard({ car }: { car: Car }) {
 function SingleCarCard({ car }: { car: Car }) {
   const [angle, setAngle] = React.useState<'quarter' | 'side' | 'back' | 'interior'>('quarter');
   const [showModal, setShowModal] = React.useState(false);
+  const [imageLoaded, setImageLoaded] = React.useState(false);
 
   const angleLabel: Record<typeof angle, string> = {
     quarter: 'Visão 3/4',
@@ -336,126 +337,169 @@ function SingleCarCard({ car }: { car: Car }) {
 
   return (
     <>
-      <Card className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-white via-white to-gray-50/50 border-0 shadow-2xl hover:shadow-3xl transition-all duration-500 backdrop-blur-sm">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-0">
-          {/* Large Image Section */}
-          <div className="lg:col-span-3 relative h-80 lg:h-96 overflow-hidden">
+      <Card className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-white via-gray-50/30 to-white border-0 shadow-2xl hover:shadow-3xl transition-all duration-700 backdrop-blur-sm hover:scale-[1.01]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 min-h-[28rem]">
+          {/* Enhanced Image Section */}
+          <div className="lg:col-span-2 relative h-80 lg:h-auto overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
             <Image
               src={currentSrc}
               alt={`${car.Name} ${car.Model} - ${angleLabel[angle]}`}
               fill
-              className="object-contain bg-gray-50 group-hover:scale-105 transition-transform duration-700 ease-out"
+              className={cn(
+                "object-contain transition-all duration-700 ease-out p-4",
+                imageLoaded ? "scale-100 blur-0" : "scale-105 blur-sm",
+                "group-hover:scale-105"
+              )}
+              onLoad={() => setImageLoaded(true)}
+              sizes="(max-width: 1024px) 100vw, 66vw"
+              priority
             />
             
-            {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-black/20 lg:block hidden" />
+            {/* Elegant gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent" />
             
-            {/* Navigation arrows */}
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+            {/* Enhanced navigation arrows */}
+            <div className="absolute left-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-500">
               <button
                 onClick={prevAngle}
-                className="w-12 h-12 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center shadow-xl hover:bg-black/80 hover:scale-110 transition-all duration-200"
+                className="w-14 h-14 bg-white/95 backdrop-blur-lg rounded-full flex items-center justify-center shadow-2xl hover:bg-white hover:scale-110 transition-all duration-300 border border-gray-200/50"
                 aria-label="Imagem anterior"
               >
-                <ChevronLeft className="h-6 w-6 text-white" />
+                <ChevronLeft className="h-6 w-6 text-gray-700" />
               </button>
             </div>
             
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-500">
               <button
                 onClick={nextAngle}
-                className="w-12 h-12 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center shadow-xl hover:bg-black/80 hover:scale-110 transition-all duration-200"
+                className="w-14 h-14 bg-white/95 backdrop-blur-lg rounded-full flex items-center justify-center shadow-2xl hover:bg-white hover:scale-110 transition-all duration-300 border border-gray-200/50"
                 aria-label="Próxima imagem"
               >
-                <ChevronRight className="h-6 w-6 text-white" />
+                <ChevronRight className="h-6 w-6 text-gray-700" />
               </button>
             </div>
 
-            {/* Location badge */}
+            {/* Modern location badge */}
             <div className="absolute top-6 left-6">
-              <div className="bg-black/70 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
+              <Badge variant="glass" className="shadow-lg backdrop-blur-xl bg-white/90 text-gray-800 border border-white/40">
                 📍 {car.Location}
-              </div>
+              </Badge>
             </div>
 
-            {/* Action buttons */}
-            <div className="absolute top-6 right-6 flex gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+            {/* Action buttons with better styling */}
+            <div className="absolute top-6 right-6 flex gap-3 opacity-0 group-hover:opacity-100 transition-all duration-500">
               <button
                 onClick={() => setShowModal(true)}
-                className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-xl hover:bg-white hover:scale-110 transition-all duration-200"
+                className="w-12 h-12 bg-white/95 backdrop-blur-lg rounded-full flex items-center justify-center shadow-xl hover:bg-white hover:scale-110 transition-all duration-300 border border-gray-200/50"
                 aria-label="Ver detalhes"
               >
-                <Maximize2 className="h-6 w-6 text-gray-700" />
+                <Maximize2 className="h-5 w-5 text-gray-700" />
               </button>
               <Link
                 href={`/cars/${slug}`}
                 target="_blank"
-                className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-xl hover:bg-white hover:scale-110 transition-all duration-200"
+                className="w-12 h-12 bg-white/95 backdrop-blur-lg rounded-full flex items-center justify-center shadow-xl hover:bg-white hover:scale-110 transition-all duration-300 border border-gray-200/50"
                 aria-label="Abrir página do carro"
               >
-                <ExternalLink className="h-6 w-6 text-gray-700" />
+                <ExternalLink className="h-5 w-5 text-gray-700" />
               </Link>
+            </div>
+
+            {/* Enhanced angle selector dots */}
+            <div className="absolute bottom-6 left-6 flex gap-2">
+              {angles.map((a) => (
+                <button
+                  key={a}
+                  onClick={() => setAngle(a)}
+                  className={cn(
+                    'w-3 h-3 rounded-full transition-all duration-300 hover:scale-125',
+                    angle === a 
+                      ? 'bg-primary shadow-lg scale-125 shadow-primary/30' 
+                      : 'bg-white/80 hover:bg-white shadow-md'
+                  )}
+                  aria-label={`Ver ${angleLabel[a]}`}
+                />
+              ))}
             </div>
           </div>
 
-          {/* Info Section */}
-          <div className="lg:col-span-2 p-8 flex flex-col justify-between">
-            <div>
-              <div className="mb-6">
-                <h2 className="text-4xl font-black text-gray-900 mb-2 leading-tight">{car.Name}</h2>
-                <p className="text-2xl text-gray-600 font-medium mb-4">{car.Model}</p>
-                <div className="text-5xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          {/* Enhanced Info Section */}
+          <div className="p-8 flex flex-col justify-between space-y-6">
+            {/* Header section */}
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <h2 className="text-3xl font-black text-gray-900 leading-tight">{car.Name}</h2>
+                <p className="text-xl text-gray-600 font-semibold">{car.Model}</p>
+                <div className="text-3xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                   {formatPrice(car.Price)}
                 </div>
               </div>
 
-              {/* Angle selector grid */}
-              <div>
-                <p className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wider">Visualizar</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {angles.map((a) => (
-                    <button
-                      key={a}
-                      onClick={() => setAngle(a)}
-                      className={cn(
-                        'relative h-20 rounded-2xl overflow-hidden border-3 transition-all duration-300 hover:scale-105',
-                        angle === a 
-                          ? 'border-primary shadow-xl shadow-primary/20' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      )}
-                      aria-label={`Ver ${angleLabel[a]}`}
-                    >
-                      <Image 
-                        src={car.Images[a]} 
-                        alt={angleLabel[a]} 
-                        fill 
-                        className="object-cover" 
-                      />
-                      {angle === a && (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                          <div className="w-4 h-4 bg-white rounded-full shadow-lg" />
-                        </div>
-                      )}
-                      <div className="absolute bottom-1 left-1 right-1">
-                        <div className="bg-black/60 backdrop-blur text-white text-xs px-2 py-1 rounded text-center font-medium">
-                          {angleLabel[a]}
-                        </div>
-                      </div>
-                    </button>
+              {/* Tags */}
+              {car.Tags && car.Tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {car.Tags.slice(0, 4).map((tag) => (
+                    <Badge key={tag} variant="outline" size="sm" className="text-xs font-medium">
+                      {tag}
+                    </Badge>
                   ))}
+                  {car.Tags.length > 4 && (
+                    <Badge variant="outline" size="sm" className="text-xs font-medium">
+                      +{car.Tags.length - 4}
+                    </Badge>
+                  )}
                 </div>
+              )}
+            </div>
+
+            {/* Modern thumbnail grid */}
+            <div className="space-y-3">
+              <p className="text-sm font-bold text-gray-700 uppercase tracking-wider">Ângulos</p>
+              <div className="grid grid-cols-4 gap-2">
+                {angles.map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => setAngle(a)}
+                    className={cn(
+                      'relative aspect-square rounded-xl overflow-hidden transition-all duration-300 hover:scale-105',
+                      'border-2 shadow-sm',
+                      angle === a 
+                        ? 'border-primary shadow-xl shadow-primary/20 scale-105' 
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                    )}
+                    aria-label={`Ver ${angleLabel[a]}`}
+                  >
+                    <Image 
+                      src={car.Images[a]} 
+                      alt={angleLabel[a]} 
+                      fill 
+                      className="object-cover" 
+                      sizes="100px"
+                    />
+                    {angle === a && (
+                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                        <div className="w-3 h-3 bg-white rounded-full shadow-lg border border-primary/30" />
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0">
+                      <div className="bg-gradient-to-t from-black/70 via-black/30 to-transparent text-white text-[10px] px-1 py-1 text-center font-semibold">
+                        {angleLabel[a].replace('Visão ', '')}
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* CTA Section */}
-            <div className="mt-8 pt-6 border-t border-gray-100">
+            {/* Enhanced CTA Section */}
+            <div className="pt-6 mt-auto">
               <Link
                 href={`/cars/${slug}`}
                 target="_blank"
-                className="w-full bg-gradient-to-r from-primary to-secondary text-white px-8 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:shadow-2xl hover:scale-105 transition-all duration-300 shadow-xl"
+                className="w-full bg-gradient-to-r from-primary via-secondary to-accent text-white px-6 py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 hover:shadow-2xl hover:scale-105 transition-all duration-300 shadow-xl group"
               >
-                <ExternalLink className="h-6 w-6" />
-                Ver página completa
+                <ExternalLink className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                Ver Página Completa
               </Link>
             </div>
           </div>
